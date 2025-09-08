@@ -1,6 +1,7 @@
 name: CI/CD Pipeline - elevate-labs-cicd-project
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main, develop ]
   pull_request:
@@ -12,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Debug print
+        run: echo "Test job started - SHA: ${{ github.sha }}"
+        
       - name: Checkout code
         uses: actions/checkout@v4
         
@@ -34,6 +38,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
+      - name: Debug print
+        run: echo "Build and Push job started - SHA: ${{ github.sha }}"
+        
       - name: Checkout code
         uses: actions/checkout@v4
         
@@ -99,7 +106,6 @@ jobs:
           
           kubectl wait --for=condition=available --timeout=300s deployment/elevate-labs-cicd-project
           
-          # Port-forward in background and sleep to allow connection setup
           kubectl port-forward svc/elevate-labs-cicd-project 8080:80 &
           sleep 10
           
