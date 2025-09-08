@@ -2,11 +2,22 @@
 # Stage 1: Development stage with hot reloading
 FROM node:18-alpine AS development
 WORKDIR /app
-COPY package*.json ./
+
+# Copy only package and lock files to leverage Docker layer cache
+COPY package.json package-lock.json ./
+
+# Install dependencies
 RUN npm ci
+
+# Now copy the rest of the app source code
 COPY . .
+
+# Expose development server port
 EXPOSE 3000
+
+# Start the app with react-scripts
 CMD ["npm", "start"]
+
 
 # Stage 2: Build stage for production
 FROM node:18-alpine AS build
