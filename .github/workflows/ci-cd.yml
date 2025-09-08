@@ -27,7 +27,6 @@ jobs:
     - name: Run tests
       run: npm test -- --coverage --watchAll=false
 
-      
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
@@ -66,7 +65,7 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        
+
   deploy-local:
     name: Deploy to Local Environment
     runs-on: ubuntu-latest
@@ -85,11 +84,11 @@ jobs:
     - name: Deploy to Minikube
       run: |
         kubectl create deployment elevate-labs-cicd-project \
-          --image=${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest
-        
+          --image=${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest || kubectl rollout restart deployment/elevate-labs-cicd-project
+          
         kubectl create service clusterip elevate-labs-cicd-project \
-          --tcp=80:80
-        
+          --tcp=80:80 || true
+          
         kubectl wait --for=condition=available --timeout=300s deployment/elevate-labs-cicd-project
         
         kubectl port-forward svc/elevate-labs-cicd-project 8080:80 &
