@@ -97,7 +97,7 @@ jobs:
         if kubectl get deployment elevate-labs-cicd-project; then
           kubectl rollout restart deployment/elevate-labs-cicd-project
         else
-          kubectl create deployment elevate-labs-cicd-project --image=${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest
+          kubectl create deployment elevate-labs-cicd-project --image=docker.io/${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest
         fi
         
         if ! kubectl get service elevate-labs-cicd-project; then
