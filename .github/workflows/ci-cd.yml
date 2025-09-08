@@ -116,3 +116,4 @@ jobs:
         kubectl get pods
         kubectl get services
         kubectl describe deployment elevate-labs-cicd-project
+
