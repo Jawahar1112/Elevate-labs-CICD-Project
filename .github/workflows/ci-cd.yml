@@ -112,7 +112,7 @@ jobs:
           curl -f http://localhost:8080 || (echo "App did not respond successfully" && exit 1)
           
       - name: Show deployment status
-        run: |
+        run: |s
           kubectl get pods
           kubectl get services
           kubectl describe deployment elevate-labs-cicd-project
