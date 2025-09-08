@@ -1,0 +1,103 @@
+name: CI/CD Pipeline - Elevate Labs Demo
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test -- --coverage --watchAll=false
+      
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ secrets.DOCKER_USERNAME }}/elevate-labs-demo
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        target: production
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        
+  deploy-local:
+    name: Deploy to Local Environment
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Start Minikube
+      uses: medyagh/setup-minikube@master
+      with:
+        minikube-version: 'latest'
+        kubectl-version: 'latest'
+        
+    - name: Deploy to Minikube
+      run: |
+        kubectl create deployment elevate-labs-cicd-project \
+          --image=${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest
+        
+        kubectl create service clusterip elevate-labs-cicd-project \
+          --tcp=80:80
+        
+        kubectl wait --for=condition=available --timeout=300s deployment/elevate-labs-cicd-project
+        
+        kubectl port-forward svc/elevate-labs-cicd-project 8080:80 &
+        sleep 10
+        
+        curl -f http://localhost:8080 || exit 1
+        
+    - name: Show deployment status
+      run: |
+        kubectl get pods
+        kubectl get services
+        kubectl describe deployment elevate-labs-cicd-project
