@@ -1,4 +1,5 @@
-name: CI/CD Pipeline - elevate-labs-cicd-project
+name: CI/CD Pipeline - Elevate Labs Demo
+
 on:
   push:
     branches: [ main, develop ]
@@ -26,7 +27,6 @@ jobs:
     - name: Run tests
       run: npm test -- --coverage --watchAll=false
 
-      
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
@@ -56,6 +56,9 @@ jobs:
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
           
+    - name: Debug Docker tags
+      run: echo "Docker tags:${{ steps.meta.outputs.tags }}"
+        
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
@@ -65,7 +68,7 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        
+
   deploy-local:
     name: Deploy to Local Environment
     runs-on: ubuntu-latest
@@ -83,11 +86,15 @@ jobs:
         
     - name: Deploy to Minikube
       run: |
-        kubectl create deployment elevate-labs-cicd-project \
-          --image=${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest
+        if kubectl get deployment elevate-labs-cicd-project; then
+          kubectl rollout restart deployment/elevate-labs-cicd-project
+        else
+          kubectl create deployment elevate-labs-cicd-project --image=${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest
+        fi
         
-        kubectl create service clusterip elevate-labs-cicd-project \
-          --tcp=80:80
+        if ! kubectl get service elevate-labs-cicd-project; then
+          kubectl create service clusterip elevate-labs-cicd-project --tcp=80:80
+        fi
         
         kubectl wait --for=condition=available --timeout=300s deployment/elevate-labs-cicd-project
         
