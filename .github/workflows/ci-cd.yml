@@ -31,7 +31,6 @@ jobs:
       - name: Run tests
         run: npm test -- --coverage --watchAll=false
 
-
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
