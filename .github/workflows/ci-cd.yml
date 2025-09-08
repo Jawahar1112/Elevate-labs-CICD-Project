@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - Elevate Labs Demo
+name: CI/CD Pipeline - elevate-labs-cicd-project
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ secrets.DOCKER_USERNAME }}/elevate-labs-demo
+        images: ${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project
         tags: |
           type=ref,event=branch
           type=sha,prefix={{branch}}-
