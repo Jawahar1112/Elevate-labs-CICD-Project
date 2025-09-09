@@ -98,16 +98,12 @@ jobs:
           else
             kubectl create deployment elevate-labs-cicd-project --image=docker.io/${{ secrets.DOCKER_USERNAME }}/elevate-labs-cicd-project:latest
           fi
-
           if ! kubectl get service elevate-labs-cicd-project; then
             kubectl create service clusterip elevate-labs-cicd-project --tcp=80:80
           fi
-
           kubectl wait --for=condition=available --timeout=300s deployment/elevate-labs-cicd-project
-
           kubectl port-forward svc/elevate-labs-cicd-project 8080:80 &
           sleep 10
-
           curl -f http://localhost:8080 || exit 1
 
       - name: Show deployment status
